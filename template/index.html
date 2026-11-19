@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Automation Console</title>
+    <style>
+        :root {
+            --ink: #182334;
+            --muted: #68758a;
+            --line: #dfe6ef;
+            --navy: #17263d;
+            --blue: #2f6fed;
+            --blue-dark: #245bd1;
+            --green: #1e9b69;
+            --red: #b84242;
+            --panel: #ffffff;
+            --canvas: #f3f6fa;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            color: var(--ink);
+            background: radial-gradient(circle at 85% 5%, rgba(47, 111, 237, 0.08), transparent 22rem), var(--canvas);
+        }
+        .shell { min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+        .sidebar {
+            background: var(--navy);
+            color: #fff;
+            padding: 28px 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 8px 28px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .brand-mark {
+            width: 40px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+            border-radius: 10px;
+            background: var(--blue);
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .brand strong { display: block; font-size: 15px; }
+        .brand span { color: #9fb0c7; font-size: 12px; }
+        .nav { display: grid; gap: 6px; margin-top: 24px; }
+        .nav-item {
+            height: 44px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 12px;
+            border-radius: 8px;
+            color: #bac8da;
+            font-size: 14px;
+        }
+        .nav-item.active { color: #fff; background: rgba(255, 255, 255, 0.09); }
+        .nav-icon { width: 20px; text-align: center; opacity: 0.9; }
+        .sidebar-footer { margin-top: auto; padding: 16px 12px 4px; color: #91a3bb; font-size: 12px; }
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            margin-right: 7px;
+            border-radius: 50%;
+            background: #42c78b;
+            box-shadow: 0 0 0 3px rgba(66, 199, 139, 0.12);
+        }
+        main { min-width: 0; padding: 32px 40px 48px; }
+        .topbar {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .eyebrow {
+            margin: 0 0 6px;
+            color: var(--blue);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        h1 { margin: 0; font-size: 28px; letter-spacing: -0.02em; }
+        .environment {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+        .grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; }
+        .card {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--panel);
+            box-shadow: 0 5px 18px rgba(25, 45, 75, 0.04);
+        }
+        .device-card { align-self: start; overflow: hidden; }
+        .card-header { padding: 18px 20px; border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 750; }
+        .device-body { padding: 20px; }
+        .device-name { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .router-icon {
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            border-radius: 10px;
+            color: #fff;
+            background: var(--navy);
+            font-size: 20px;
+        }
+        .device-name strong { display: block; font-size: 16px; }
+        .device-name span { color: var(--muted); font-size: 12px; }
+        .detail {
+            display: grid;
+            grid-template-columns: 78px 1fr;
+            padding: 10px 0;
+            border-top: 1px solid #edf1f6;
+            font-size: 13px;
+        }
+        .detail span:first-child { color: var(--muted); }
+        .ready { display: inline-flex; align-items: center; gap: 7px; color: var(--green); font-weight: 700; }
+        .run-button {
+            width: 100%;
+            height: 46px;
+            margin-top: 18px;
+            border: 0;
+            border-radius: 8px;
+            color: #fff;
+            background: var(--blue);
+            font: inherit;
+            font-weight: 750;
+            cursor: pointer;
+            transition: 0.15s ease;
+        }
+        .run-button:hover { background: var(--blue-dark); transform: translateY(-1px); }
+        .run-button:active { transform: translateY(0); }
+        .workspace { min-width: 0; }
+        .alert {
+            margin-bottom: 16px;
+            padding: 14px 16px;
+            border: 1px solid #edcaca;
+            border-radius: 8px;
+            color: var(--red);
+            background: #fff6f6;
+            font-size: 13px;
+        }
+        .empty-state { min-height: 390px; display: grid; place-items: center; text-align: center; }
+        .empty-state-inner { max-width: 330px; }
+        .empty-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            display: grid;
+            place-items: center;
+            border-radius: 16px;
+            color: var(--blue);
+            background: #edf3ff;
+            font-size: 28px;
+        }
+        .empty-state h2 { margin: 0 0 8px; font-size: 17px; }
+        .empty-state p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+        .results { display: grid; gap: 16px; }
+        .result-card { overflow: hidden; }
+        .result-header {
+            min-height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 10px 14px 10px 18px;
+            border-bottom: 1px solid var(--line);
+        }
+        .result-title { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 750; }
+        .success-mark {
+            width: 20px;
+            height: 20px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            color: #fff;
+            background: var(--green);
+            font-size: 12px;
+        }
+        .copy-button {
+            height: 32px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            color: var(--muted);
+            background: #fff;
+            font: inherit;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .copy-button:hover { color: var(--ink); border-color: #bac7d8; }
+        pre {
+            max-height: 360px;
+            margin: 0;
+            overflow: auto;
+            padding: 18px;
+            color: #dce8f7;
+            background: #111c2c;
+            font: 12px/1.65 "Cascadia Code", Consolas, monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        @media (max-width: 900px) {
+            .shell { grid-template-columns: 76px minmax(0, 1fr); }
+            .sidebar { padding: 20px 12px; }
+            .brand { justify-content: center; padding: 0 0 20px; }
+            .brand-copy, .nav-item span, .sidebar-footer { display: none; }
+            .nav-item { justify-content: center; padding: 0; }
+            main { padding: 24px; }
+        }
+        @media (max-width: 700px) {
+            .shell { display: block; }
+            .sidebar { display: none; }
+            main { padding: 20px 16px 36px; }
+            .topbar { align-items: center; }
+            .grid { grid-template-columns: 1fr; }
+            .device-card { width: 100%; }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-mark">NA</div>
+                <div class="brand-copy">
+                    <strong>NetConsole</strong>
+                    <span>Automation Suite</span>
+                </div>
+            </div>
+            <nav class="nav">
+                <div class="nav-item active"><span class="nav-icon">&#9638;</span><span>Devices</span></div>
+                <div class="nav-item"><span class="nav-icon">&#9881;</span><span>Automation</span></div>
+                <div class="nav-item"><span class="nav-icon">&#9783;</span><span>Activity</span></div>
+            </nav>
+            <div class="sidebar-footer"><span class="status-dot"></span>System ready</div>
+        </aside>
+
+        <main>
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">Network Operations</p>
+                    <h1>Device Console</h1>
+                </div>
+                <div class="environment"><span class="status-dot"></span>Cisco IOS environment</div>
+            </header>
+
+            <div class="grid">
+                <aside class="card device-card">
+                    <div class="card-header">Target device</div>
+                    <div class="device-body">
+                        <div class="device-name">
+                            <div class="router-icon">&#8644;</div>
+                            <div><strong>Core Router</strong><span>Cisco IOS / Telnet</span></div>
+                        </div>
+                        <div class="detail"><span>Host</span><strong>192.168.10.33</strong></div>
+                        <div class="detail"><span>Port</span><strong>32770</strong></div>
+                        <div class="detail"><span>Username</span><strong>admin</strong></div>
+                        <div class="detail">
+                            <span>Status</span>
+                            <span class="ready"><span class="status-dot"></span>Available</span>
+                        </div>
+                        <form method="POST">
+                            <button class="run-button" type="submit">Run diagnostics</button>
+                        </form>
+                    </div>
+                </aside>
+
+                <section class="workspace">
+                    {% if error %}
+                    <div class="alert">{{ error }}</div>
+                    {% endif %}
+
+                    {% if results %}
+                    <div class="results">
+                        {% for command, output in results.items() %}
+                        <article class="card result-card">
+                            <div class="result-header">
+                                <div class="result-title"><span class="success-mark">&#10003;</span>{{ command }}</div>
+                                <button class="copy-button" type="button" data-copy="{{ loop.index }}">Copy output</button>
+                            </div>
+                            <pre id="output-{{ loop.index }}">{{ output }}</pre>
+                        </article>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="card empty-state">
+                        <div class="empty-state-inner">
+                            <div class="empty-icon">&#9654;</div>
+                            <h2>Ready to collect diagnostics</h2>
+                            <p>Run the automation to retrieve version details, interface status, and the running configuration.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.querySelectorAll(".copy-button").forEach(function (button) {
+            button.addEventListener("click", async function () {
+                const output = document.getElementById("output-" + button.dataset.copy);
+                await navigator.clipboard.writeText(output.textContent);
+                button.textContent = "Copied";
+                setTimeout(function () { button.textContent = "Copy output"; }, 1500);
+            });
+        });
+    </script>
+</body>
+</html>
